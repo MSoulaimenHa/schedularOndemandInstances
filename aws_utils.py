@@ -81,3 +81,20 @@ def instanceStarter(instance_ids: list, target_group_arn: str):
 
     # Verify instances are in the target group
     verify_instances_in_target_group(instance_ids, target_group_arn)
+
+
+def stop_instances(instance_ids):
+    """Stop the EC2 instances with the given instance IDs."""
+
+    try:
+        # Stop the instances
+        response = ec2_client.stop_instances(InstanceIds=instance_ids)
+        print(f"Stopping instances: {instance_ids}")
+
+        # Wait for instances to stop
+        ec2_client.get_waiter('instance_stopped').wait(
+            InstanceIds=instance_ids)
+        print(f"Instances stopped: {instance_ids}")
+
+    except Exception as e:
+        print(f"Failed to stop instances: {e}")
