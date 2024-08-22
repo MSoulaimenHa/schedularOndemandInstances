@@ -1,4 +1,4 @@
-name: Stop EC2 Instances and Register to Target Group
+name: Stop EC2 Instances
 
 on:
   schedule:
@@ -33,7 +33,7 @@ jobs:
         run: python stop.py -s refurnishing
 
       - name: Output success message
-        run: echo "EC2 instances stoped and registered to target group successfully."
+        run: echo "EC2 instances has been stoped."
 
   staging:
     runs-on: ubuntu-latest
@@ -59,7 +59,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run the Python script
-        run: python start.py -s staging
+        run: python stop.py -s staging
 
       - name: Output success message
-        run: echo "EC2 instances started and registered to target group successfully."
+        run: echo "EC2 instances has been stopped"
