@@ -88,14 +88,16 @@ jobs:
 
       - name: Set up SSH key
         run: |
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
+          echo "$PRIVATE_KEY_CONTENT" > private-key.pem
+          chmod 600 private-key.pem
+        env:
+          PRIVATE_KEY_CONTENT: ${{ secrets.SSH_PRIVATE_KEY }}
 
       - name: Deploy to instances
         run: |
           while read instance_id; do
             instance_ip=$(aws ec2 describe-instances --instance-ids $instance_id --query 'Reservations[].Instances[].PublicIpAddress' --output text --region ${{ secrets.AWS_REGION }})
-            ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@$instance_ip "
+            ssh -o StrictHostKeyChecking=no -i ./private-key.pem ubuntu@$instance_ip "
               docker system prune --force --all --volumes && \
               docker pull ${{ github.event.inputs.ECR_REPOSITORY }}:${{ github.event.inputs.docker-tag }} && \
               cd /home/ubuntu/docker-compose/directory && \
