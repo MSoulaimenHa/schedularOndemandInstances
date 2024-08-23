@@ -19,8 +19,18 @@ on:
           - generative-virtual-refurnishing
       target-group-arn:
         required: true
-        description: "Appropriate Target Group"
-
+        description: "Select the Target Group you are willing to work On"
+        type: choice
+        options:
+          - arn:aws:elasticloadbalancing:eu-central-1:905418147598:targetgroup/generative-virtual-staging/cf60257b8cb37121
+          - arn:aws:elasticloadbalancing:eu-central-1:905418147598:targetgroup/generative-virtual-refurnishing/704af4cdaf6dd0fd
+      ECR_REPOSITORY:
+        required: true
+        type: choice
+        description: "Choose one of the following ECR repository."
+        options:
+          - 905418147598.dkr.ecr.eu-central-1.amazonaws.com/generative-staging-v2
+          - 905418147598.dkr.ecr.eu-central-1.amazonaws.com/generative-virtual-refurnishing
 env:
   REPOS_OWNER: proptexx-com
 
@@ -41,7 +51,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Set up Docker Buildx
@@ -51,9 +61,9 @@ jobs:
         id: ecr-login
         run: |
           cd ${{ github.event.inputs.repos-name }}
-          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY }}
-          docker build -t ${{ secrets.ECR_REPOSITORY }}:${{ github.event.inputs.docker-tag }} .
-          docker push ${{ secrets.ECR_REPOSITORY }}:${{ github.event.inputs.docker-tag }}
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ github.event.inputs.ECR_REPOSITORY }}
+          docker build -t ${{ github.event.inputs.ECR_REPOSITORY }}:${{ github.event.inputs.docker-tag }} .
+          docker push ${{ github.event.inputs.ECR_REPOSITORY }}:${{ github.event.inputs.docker-tag }}
 
   deploy:
     runs-on: ubuntu-latest
@@ -63,7 +73,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Get target group instances
@@ -87,7 +97,7 @@ jobs:
             instance_ip=$(aws ec2 describe-instances --instance-ids $instance_id --query 'Reservations[].Instances[].PublicIpAddress' --output text --region ${{ secrets.AWS_REGION }})
             ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@$instance_ip "
               docker system prune --force --all --volumes && \
-              docker pull ${{ secrets.ECR_REPOSITORY }}:${{ github.event.inputs.docker-tag }} && \
+              docker pull ${{ github.event.inputs.ECR_REPOSITORY }}:${{ github.event.inputs.docker-tag }} && \
               cd /home/ubuntu/docker-compose/directory && \
               docker-compose down && \
               docker-compose up -d" 
