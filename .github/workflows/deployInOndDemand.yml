@@ -99,6 +99,7 @@ jobs:
             instance_ip=$(aws ec2 describe-instances --instance-ids $instance_id --query 'Reservations[].Instances[].PublicIpAddress' --output text --region ${{ secrets.AWS_REGION }})
             ssh -o StrictHostKeyChecking=no -i ./private-key.pem ubuntu@$instance_ip "
               docker system prune --force --all --volumes && \
+              aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ github.event.inputs.ECR_REPOSITORY }} && \
               docker pull ${{ github.event.inputs.ECR_REPOSITORY }}:${{ github.event.inputs.docker-tag }} && \
               cd /home/ubuntu/docker-compose/directory && \
               docker-compose down && \
