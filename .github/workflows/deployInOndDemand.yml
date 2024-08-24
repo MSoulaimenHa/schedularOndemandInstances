@@ -101,7 +101,7 @@ jobs:
               docker system prune --force --all --volumes && \
               aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ github.event.inputs.ECR_REPOSITORY }} && \
               docker pull ${{ github.event.inputs.ECR_REPOSITORY }}:${{ github.event.inputs.docker-tag }} && \
-              cd /home/ubuntu/docker-compose/directory && \
+              cd /home/ubuntu/ && \
               docker-compose down && \
               echo 'version: \"3.8\"' > /home/ubuntu/docker-compose.yml && \
               echo '' >> /home/ubuntu/docker-compose.yml && \
