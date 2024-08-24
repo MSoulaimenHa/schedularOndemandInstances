@@ -103,6 +103,24 @@ jobs:
               docker pull ${{ github.event.inputs.ECR_REPOSITORY }}:${{ github.event.inputs.docker-tag }} && \
               cd /home/ubuntu/docker-compose/directory && \
               docker-compose down && \
+              echo 'version: \"3.8\"' > /home/ubuntu/docker-compose.yml && \
+              echo '' >> /home/ubuntu/docker-compose.yml && \
+              echo 'services:' >> /home/ubuntu/docker-compose.yml && \
+              echo '  ${{ github.event.inputs.repos-name }}:' >> /home/ubuntu/docker-compose.yml && \
+              echo '    image: ${{ github.event.inputs.ECR_REPOSITORY }}:${{ github.event.inputs.docker-tag }}' >> /home/ubuntu/docker-compose.yml && \
+              echo '    ports:' >> /home/ubuntu/docker-compose.yml && \
+              echo '      - \"80:8080\"' >> /home/ubuntu/docker-compose.yml && \
+              echo '    restart: always' >> /home/ubuntu/docker-compose.yml && \
+              echo '    volumes:' >> /home/ubuntu/docker-compose.yml && \
+              echo '      - /home/ubuntu/refurnishing/trained_weights:/usr/src/app/trained_weights' >> /home/ubuntu/docker-compose.yml && \
+              echo '      - /home/ubuntu/refurnishing/huggingface:/root/.cache/huggingface' >> /home/ubuntu/docker-compose.yml && \
+              echo '    deploy:' >> /home/ubuntu/docker-compose.yml && \
+              echo '      resources:' >> /home/ubuntu/docker-compose.yml && \
+              echo '        reservations:' >> /home/ubuntu/docker-compose.yml && \
+              echo '          devices:' >> /home/ubuntu/docker-compose.yml && \
+              echo '            - driver: nvidia' >> /home/ubuntu/docker-compose.yml && \
+              echo '              count: 1' >> /home/ubuntu/docker-compose.yml && \
+              echo '              capabilities: [gpu]' >> /home/ubuntu/docker-compose.yml && \
               docker-compose up -d" 
           done < instances.txt
 
