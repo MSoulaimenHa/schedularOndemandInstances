@@ -76,16 +76,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Get target group instances
-        id: target-instances
-        run: |
-          aws elbv2 describe-target-health --target-group-arn ${{ github.event.inputs.target-group-arn }} --query 'TargetHealthDescriptions[].Target.Id' --output text --region ${{ secrets.AWS_REGION }} > instances.txt
-          if [ ! -s instances.txt ]; then
-            echo "No instances found in the target group."
-            exit 1
-          fi
-          cat instances.txt
-
       - name: Set up SSH key
         run: |
           echo "$PRIVATE_KEY_CONTENT" > private-key.pem
@@ -95,8 +85,13 @@ jobs:
 
       - name: Deploy to instances
         run: |
-          while read instance_id; do
+          # Fetch instance IDs and store them in a list
+          instance_ids=$(aws elbv2 describe-target-health --target-group-arn ${{ github.event.inputs.target-group-arn }} --query 'TargetHealthDescriptions[].Target.Id' --output text --region ${{ secrets.AWS_REGION }})
+
+          for instance_id in $instance_ids; do
+            echo "Deploying to instance ID: $instance_id"
             instance_ip=$(aws ec2 describe-instances --instance-ids $instance_id --query 'Reservations[].Instances[].PublicIpAddress' --output text --region ${{ secrets.AWS_REGION }})
+            echo "Instance IP: $instance_ip"
             ssh -o StrictHostKeyChecking=no -i ./private-key.pem ubuntu@$instance_ip "
               docker system prune --force --all --volumes && \
               aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ github.event.inputs.ECR_REPOSITORY }} && \
@@ -122,7 +117,7 @@ jobs:
               echo '              count: 1' >> /home/ubuntu/docker-compose.yml && \
               echo '              capabilities: [gpu]' >> /home/ubuntu/docker-compose.yml && \
               docker-compose up -d" 
-          done < instances.txt
+          done
 
       - name: Clean up
         run: rm instances.txt
