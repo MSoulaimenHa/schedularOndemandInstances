@@ -27,10 +27,13 @@ jobs:
 
       - name: Install dependencies
         run: |
+          cd ondemand-up-down/
           pip install -r requirements.txt
 
       - name: Run the Python script
-        run: python stop.py -s refurnishing
+        run: |
+          cd ondemand-up-down/
+          python stop.py -s refurnishing
 
       - name: Output success message
         run: echo "EC2 instances has been stoped."
@@ -56,10 +59,13 @@ jobs:
 
       - name: Install dependencies
         run: |
+          cd ondemand-up-down/
           pip install -r requirements.txt
 
       - name: Run the Python script
-        run: python stop.py -s staging
+        run: |
+          cd ondemand-up-down/
+          python stop.py -s staging
 
       - name: Output success message
         run: echo "EC2 instances has been stopped"
