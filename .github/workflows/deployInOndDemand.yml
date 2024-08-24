@@ -118,6 +118,3 @@ jobs:
               echo '              capabilities: [gpu]' >> /home/ubuntu/docker-compose.yml && \
               docker-compose up -d" 
           done
-
-      - name: Clean up
-        run: rm instances.txt
