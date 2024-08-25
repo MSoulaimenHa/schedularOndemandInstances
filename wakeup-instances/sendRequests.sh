@@ -47,11 +47,3 @@ for IP in "${IP_ADDRESSES[@]}"; do
     END_TIME=$(date '+%Y-%m-%d %H:%M:%S')
     echo "$START_TIME - Sent POST request to $IP. $RESPONSE" 
 done
-
-for IP in "${IP_ADDRESSES[@]}"; do
-    START_TIME=$(date '+%Y-%m-%d %H:%M:%S')
-    RESPONSE=$(curl -s -w "HTTP_CODE:%{http_code} TIME:%{time_total}" -o /dev/null http://$IP/generative-virtual-staging/predict)
-    END_TIME=$(date '+%Y-%m-%d %H:%M:%S')
-    echo "$START_TIME - Sent GET request to $IP. $RESPONSE" 
-done
-
