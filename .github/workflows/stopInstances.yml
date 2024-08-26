@@ -2,7 +2,7 @@ name: Stop EC2 Instances
 
 on:
   schedule:
-    - cron: "0 18 * * *" # 8 PM CET (7 PM UTC) from Monday to Friday
+    - cron: "0 17 * * *" # 8 PM CET (7 PM UTC) from Monday to Friday
   workflow_dispatch: # Allows manual triggering of the workflow
 
 jobs:
