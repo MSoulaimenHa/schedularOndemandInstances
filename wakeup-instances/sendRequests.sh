@@ -30,10 +30,11 @@ echo "$(date '+%Y-%m-%d %H:%M:%S') - Public IP addresses: ${IP_ADDRESSES[@]}"
 # JSON payload
 PAYLOAD=$(cat <<EOF
 {
-    "base64_image": "string",
-    "image_url": "https://img.freepik.com/free-vector/empty-living-room-modern-apartment_529539-69.jpg",
-    "room_type": "bedroom",
-    "architecture_style": "countryside"
+            "base64_image": "string",
+            "image_url": "https://media.istockphoto.com/id/521806786/photo/3d-rendering-of-empty-room-interior-white-brown-colors.jpg?s=612x612&w=0&k=20&c=njPof128FBEo4KjyC8ONDUPS0aBBkFEial5Uy8xoqdA=",
+            "room_type": "living room",
+            "architecture_style": "countryside",
+  "watermark_type": "proptexx"
 }
 EOF
 )
