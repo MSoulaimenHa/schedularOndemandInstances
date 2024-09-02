@@ -39,6 +39,11 @@ jobs:
     runs-on: self-hosted
 
     steps:
+      - name: Remove existing directory if it exists
+        run: |
+          if [ -d "${{ github.event.inputs.repos-name }}" ]; then
+            rm -rf ${{ github.event.inputs.repos-name }}
+          fi
       - name: Clone Repository
         uses: GuillaumeFalourd/clone-github-repo-action@v2.3
         with:
