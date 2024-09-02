@@ -1,4 +1,4 @@
-name: Deploy specific repos in on-demand instance
+name: Other Clients deployment
 
 on:
   workflow_dispatch:
