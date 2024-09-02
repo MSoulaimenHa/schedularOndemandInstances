@@ -112,11 +112,11 @@ jobs:
               echo '    volumes:' >> /home/ubuntu/docker-compose.yml && \
               echo '      - /home/ubuntu/refurnishing/trained_weights:/usr/src/app/trained_weights' >> /home/ubuntu/docker-compose.yml && \
               echo '      - /home/ubuntu/refurnishing/huggingface:/root/.cache/huggingface' >> /home/ubuntu/docker-compose.yml && \
-              echo '    logging:' >> /home/ubuntu/docker-compose.yml && \
-              echo '      driver: awslogs' >> /home/ubuntu/docker-compose.yml && \
-              echo '      options:' >> /home/ubuntu/docker-compose.yml && \
-              echo '        awslogs-group: generative-virtual-models' >> /home/ubuntu/docker-compose.yml && \
-              echo '        awslogs-stream: ${{ github.event.inputs.repos-name }}' >> /home/ubuntu/docker-compose.yml && \
+              echo '    #logging:' >> /home/ubuntu/docker-compose.yml && \
+              echo '      #driver: awslogs' >> /home/ubuntu/docker-compose.yml && \
+              echo '      #options:' >> /home/ubuntu/docker-compose.yml && \
+              echo '        #awslogs-group: generative-virtual-models' >> /home/ubuntu/docker-compose.yml && \
+              echo '        #awslogs-stream: ${{ github.event.inputs.repos-name }}' >> /home/ubuntu/docker-compose.yml && \
               echo '    deploy:' >> /home/ubuntu/docker-compose.yml && \
               echo '      resources:' >> /home/ubuntu/docker-compose.yml && \
               echo '        reservations:' >> /home/ubuntu/docker-compose.yml && \
@@ -166,11 +166,11 @@ jobs:
               echo '              count: all' >> /home/ubuntu/docker-compose.yml && \
               echo '              capabilities: [gpu]' >> /home/ubuntu/docker-compose.yml && \
               echo '    runtime: nvidia' >> /home/ubuntu/docker-compose.yml && \
-              echo '    logging:' >> /home/ubuntu/docker-compose.yml && \
-              echo '      driver: awslogs' >> /home/ubuntu/docker-compose.yml && \
-              echo '      options:' >> /home/ubuntu/docker-compose.yml && \
-              echo '        awslogs-group: generative-virtual-models' >> /home/ubuntu/docker-compose.yml && \
-              echo '        awslogs-stream: ${{ github.event.inputs.repos-name }}' >> /home/ubuntu/docker-compose.yml && \
+              echo '   # logging:' >> /home/ubuntu/docker-compose.yml && \
+              echo '    #  driver: awslogs' >> /home/ubuntu/docker-compose.yml && \
+              echo '     # options:' >> /home/ubuntu/docker-compose.yml && \
+              echo '      #  awslogs-group: generative-virtual-models' >> /home/ubuntu/docker-compose.yml && \
+              echo '       # awslogs-stream: ${{ github.event.inputs.repos-name }}' >> /home/ubuntu/docker-compose.yml && \
               docker-compose up -d"
           done
 
