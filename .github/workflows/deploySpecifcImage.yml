@@ -140,7 +140,7 @@ jobs:
 
   staging-api:
     runs-on: self-hosted
-    needs: [deploy, build]
+    needs: deploy
     if: ${{ github.event.inputs.repos-name == 'generative-virtual-staging-2' }}
     steps:
       - name: Configure AWS credentials
@@ -158,7 +158,7 @@ jobs:
           bash ./wakeup-instances/sendRequests.sh ${{ secrets.AWS_REGION }} ${{ github.event.inputs.target-group-arn }}
   refurnishing-api:
     runs-on: self-hosted
-    needs: [deploy, build]
+    needs: deploy
     if: ${{ github.event.inputs.repos-name == 'generative-virtual-refurnishing' }}
     steps:
       - name: Configure AWS credentials
