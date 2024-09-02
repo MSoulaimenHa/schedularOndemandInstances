@@ -36,7 +36,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
       - name: Clone Repository
@@ -66,7 +66,7 @@ jobs:
           docker push ${{ github.event.inputs.ECR_REPOSITORY }}:${{ github.event.inputs.docker-tag }}
 
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: build
     steps:
       - name: Configure AWS credentials
@@ -173,7 +173,7 @@ jobs:
           done
 
   staging-api:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: [deploy, build]
     if: ${{ github.event.inputs.repos-name == 'generative-virtual-staging-2' }}
     steps:
@@ -191,7 +191,7 @@ jobs:
         run: |
           bash ./wakeup-instances/sendRequests.sh ${{ secrets.AWS_REGION }} ${{ github.event.inputs.target-group-arn }}
   refurnishing-api:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: [deploy, build]
     if: ${{ github.event.inputs.repos-name == 'generative-virtual-refurnishing' }}
     steps:
