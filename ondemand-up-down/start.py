@@ -1,7 +1,7 @@
 import os
 import argparse
 from dotenv import load_dotenv
-from aws_utils import instanceStarter
+from aws_utils import instanceStarter, get_instance_ids_from_target_group
 
 
 def service_starter(service_name):
@@ -9,11 +9,14 @@ def service_starter(service_name):
     load_dotenv()
 
     if service_name == "staging":
-        instance_ids = os.getenv("STAGING_INSTANCE_IDS", "").split(",")
         target_group_arn = os.getenv("STAGING_TARGET_GROUP_ARN")
+        instance_ids = get_instance_ids_from_target_group(
+            target_group_arn=target_group_arn)
     elif service_name == "refurnishing":
-        instance_ids = os.getenv("REFURNISHING_INSTANCE_IDS", "").split(",")
         target_group_arn = os.getenv("REFURNISHING_TARGET_GROUP_ARN")
+        instance_ids = get_instance_ids_from_target_group(
+            target_group_arn=target_group_arn)
+
     else:
         raise ValueError(f"""Service name '{
                          service_name}' is not recognized. Please use 'staging' or 'refurnishing'.""")

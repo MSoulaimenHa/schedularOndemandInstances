@@ -9,6 +9,27 @@ ec2_client = boto3.client('ec2')
 elbv2_client = boto3.client('elbv2')
 
 
+def get_instance_ids_from_target_group(target_group_arn):
+
+    # Initialize an empty list to store instance IDs
+    instance_ids = []
+
+    try:
+        # Retrieve the list of targets from the target group
+        response = elbv2_client.describe_target_health(
+            TargetGroupArn=target_group_arn
+        )
+
+        # Extract instance IDs from the response
+        for target in response['TargetHealthDescriptions']:
+            instance_ids.append(target['Target']['Id'])
+
+    except Exception as e:
+        print(f"Error retrieving instance IDs: {e}")
+
+    return instance_ids
+
+
 def start_instances(instance_ids):
     print(f"Starting instances: {instance_ids}")
     ec2_client.start_instances(InstanceIds=instance_ids)
