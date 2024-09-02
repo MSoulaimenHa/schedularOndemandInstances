@@ -34,7 +34,6 @@ env:
 jobs:
   deploy:
     runs-on: self-hosted
-    needs: build
     steps:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
