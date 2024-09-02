@@ -3,9 +3,6 @@ name: Deploy specific Docker Image
 on:
   workflow_dispatch:
     inputs:
-      branch:
-        required: true
-        description: "Branch to checkout to it"
       docker-tag:
         required: true
         description: "Assign a tag for the version of the deployment (exp: let's say that the current version is 2.0.2 assign tag 2.0.2-1)"
