@@ -105,7 +105,7 @@ jobs:
               echo '    ports:' >> /home/ubuntu/docker-compose.yml && \
               echo '      - 80:8080' >> /home/ubuntu/docker-compose.yml && \
               echo '    volumes:' >> /home/ubuntu/docker-compose.yml && \
-              echo '      - ./output:/usr/src/app/checkpoints' >> /home/ubuntu/docker-compose.yml && \
+              echo '      - ./checkpoints:/usr/src/app/checkpoints' >> /home/ubuntu/docker-compose.yml && \
               echo '    deploy:' >> /home/ubuntu/docker-compose.yml && \
               echo '      resources:' >> /home/ubuntu/docker-compose.yml && \
               echo '        reservations:' >> /home/ubuntu/docker-compose.yml && \
