@@ -1,4 +1,4 @@
-name: Deploy specific Docker Image
+name: Sync S3 bucket
 
 on:
   workflow_dispatch:
