@@ -107,7 +107,7 @@ jobs:
               echo '      CODEFORMER_PATH: \"./checkpoints/codeformer\"' >> /home/ubuntu/docker-compose.yml && \
               echo '      CACHE_DIRECTORY: \"./checkpoints/cache\"' >> /home/ubuntu/docker-compose.yml && \
               echo '      PADDLE_MODEL_PATH: \"./checkpoints/paddle\"' >> /home/ubuntu/docker-compose.yml && \
-              echo '    container_name: staging' >> /home/ubuntu/docker-compose.yml && \
+              echo '    container_name: ${{ github.event.inputs.repos-name }}' >> /home/ubuntu/docker-compose.yml && \
               echo '    restart: always' >> /home/ubuntu/docker-compose.yml && \
               echo '    ports:' >> /home/ubuntu/docker-compose.yml && \
               echo '      - 80:8080' >> /home/ubuntu/docker-compose.yml && \

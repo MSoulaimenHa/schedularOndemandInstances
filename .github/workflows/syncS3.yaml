@@ -76,20 +76,13 @@ jobs:
           instance_ids=$(aws elbv2 describe-target-health --target-group-arn ${{ github.event.inputs.target-group-arn }} --query 'TargetHealthDescriptions[].Target.Id' --output text --region ${{ github.event.inputs.target-region }})
 
           for instance_id in $instance_ids; do
-            if [ "$instance_id" != "i-05503c1b4c3ce839b" ]; then
-              echo "Deploying to instance ID: $instance_id"
-              instance_ip=$(aws ec2 describe-instances --instance-ids $instance_id --query 'Reservations[].Instances[].PublicIpAddress' --output text --region ${{ github.event.inputs.target-region }})
-              echo "Instance IP: $instance_ip"
-              ssh -o StrictHostKeyChecking=no -i ./private-key.pem ubuntu@$instance_ip "
-                cd /home/ubuntu/ && \
-                docker-compose down && \
-                sudo rm -rf /home/ubuntu/checkpoints/ && \
-                mkdir /home/ubuntu/checkpoints/ && \
-                mv /home/ubuntu/output/* /home/ubuntu/checkpoints/ && \
-                aws s3 sync ${{ github.event.inputs['s3-bucket'] }} ${{ github.event.inputs['folder-name'] }} && \
-                docker-compose up -d
-              "
-            else
-              echo "Skipping instance ID: $instance_id"
-            fi
+            echo "Deploying to instance ID: $instance_id"
+            instance_ip=$(aws ec2 describe-instances --instance-ids $instance_id --query 'Reservations[].Instances[].PublicIpAddress' --output text --region ${{ github.event.inputs.target-region }})
+            echo "Instance IP: $instance_ip"
+            ssh -o StrictHostKeyChecking=no -i ./private-key.pem ubuntu@$instance_ip "
+              cd /home/ubuntu/ && \
+              docker-compose down && \
+              aws s3 sync ${{ github.event.inputs['s3-bucket'] }} ${{ github.event.inputs['folder-name'] }} && \
+              docker-compose up -d
+            "
           done
