@@ -1,0 +1,55 @@
+# Parallel execution step 
+
+- name: Deploy to Docker on instances
+  run: |
+    # Fetch instance IDs and store them in a list
+    instance_ids=$(aws elbv2 describe-target-health --target-group-arn ${{ github.event.inputs.target-group-arn }} --query 'TargetHealthDescriptions[].Target.Id' --output text --region ${{ github.event.inputs.target-region }})
+
+    deploy_instance() {
+      instance_id=$1
+      echo "Deploying to instance ID: $instance_id"
+      instance_ip=$(aws ec2 describe-instances --instance-ids $instance_id --query 'Reservations[].Instances[].PublicIpAddress' --output text --region ${{ github.event.inputs.target-region }})
+      echo "Instance IP: $instance_ip"
+      ssh -o StrictHostKeyChecking=no -i ./private-key.pem ubuntu@$instance_ip "
+        cd /home/ubuntu/ && \
+        docker-compose down && \
+        docker system prune --force --all --volumes && \
+        aws ecr get-login-password --region ${{ env.ECR_REGION }} | docker login --username AWS --password-stdin ${{ github.event.inputs.ECR_REPOSITORY }} && \
+        docker pull ${{ github.event.inputs.ECR_REPOSITORY }}:${{ github.event.inputs.docker-tag }} && \
+        echo 'version: \"3.8\"' > /home/ubuntu/docker-compose.yml && \
+        echo '' >> /home/ubuntu/docker-compose.yml && \
+        echo 'services:' >> /home/ubuntu/docker-compose.yml && \
+        echo '  ${{ github.event.inputs.repos-name }}:' >> /home/ubuntu/docker-compose.yml && \
+        echo '    image: ${{ github.event.inputs.ECR_REPOSITORY }}:${{ github.event.inputs.docker-tag }}' >> /home/ubuntu/docker-compose.yml && \
+        echo '    environment:' >> /home/ubuntu/docker-compose.yml && \
+        echo '      CODEFORMER_PATH: \"./checkpoints/codeformer\"' >> /home/ubuntu/docker-compose.yml && \
+        echo '      CACHE_DIRECTORY: \"./checkpoints/cache\"' >> /home/ubuntu/docker-compose.yml && \
+        echo '      PADDLE_MODEL_PATH: \"./checkpoints/paddle\"' >> /home/ubuntu/docker-compose.yml && \
+        echo '    container_name: staging' >> /home/ubuntu/docker-compose.yml && \
+        echo '    restart: always' >> /home/ubuntu/docker-compose.yml && \
+        echo '    ports:' >> /home/ubuntu/docker-compose.yml && \
+        echo '      - 80:8080' >> /home/ubuntu/docker-compose.yml && \
+        echo '    volumes:' >> /home/ubuntu/docker-compose.yml && \
+        echo '      - ./checkpoints:/usr/src/app/checkpoints' >> /home/ubuntu/docker-compose.yml && \
+        echo '    deploy:' >> /home/ubuntu/docker-compose.yml && \
+        echo '      resources:' >> /home/ubuntu/docker-compose.yml && \
+        echo '        reservations:' >> /home/ubuntu/docker-compose.yml && \
+        echo '          devices:' >> /home/ubuntu/docker-compose.yml && \
+        echo '            - driver: nvidia' >> /home/ubuntu/docker-compose.yml && \
+        echo '              count: all' >> /home/ubuntu/docker-compose.yml && \
+        echo '              capabilities: [gpu]' >> /home/ubuntu/docker-compose.yml && \
+        echo '    runtime: nvidia' >> /home/ubuntu/docker-compose.yml && \
+        echo '    logging:' >> /home/ubuntu/docker-compose.yml && \
+        echo '      driver: awslogs' >> /home/ubuntu/docker-compose.yml && \
+        echo '      options:' >> /home/ubuntu/docker-compose.yml && \
+        echo '        awslogs-group: ${{ github.event.inputs.logs-groups }}' >> /home/ubuntu/docker-compose.yml && \
+        echo '        awslogs-stream: ${{ github.event.inputs.logs-stream }}' >> /home/ubuntu/docker-compose.yml && \
+        docker-compose up -d"
+    }
+
+    for instance_id in $instance_ids; do
+      deploy_instance $instance_id &
+    done
+
+    # Wait for all background jobs to finish
+    wait
