@@ -70,12 +70,19 @@ jobs:
           aws-region: ${{ github.event.inputs.target-region }}
 
       - name: Set up SSH key
+        if: ${{ github.envent.inputs.target-region == 'us-east-2' }}
         run: |
           echo "$PRIVATE_KEY_CONTENT" > private-key.pem
           chmod 600 private-key.pem
         env:
           PRIVATE_KEY_CONTENT: ${{ secrets.SSH_PRIVATE_KEY }}
-
+      - name: Set up SSH key
+        if: ${{ github.envent.inputs.target-region == 'eu-central-1' }}
+        run: |
+          echo "$PRIVATE_KEY_CONTENT" > private-key.pem
+          chmod 600 private-key.pem
+        env:
+          PRIVATE_KEY_CONTENT: ${{ secrets.SSH_PRIVATE_KEY_CENTRAL }}
       - name: Deploy to docker to instances
         run: |
           # Fetch instance IDs and store them in a list
