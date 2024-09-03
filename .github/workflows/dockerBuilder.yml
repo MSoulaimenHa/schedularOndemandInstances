@@ -1,4 +1,4 @@
-name: Deploy specific repos in on-demand instance
+name: Build docker container
 
 on:
   workflow_dispatch:
