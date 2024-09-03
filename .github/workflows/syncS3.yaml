@@ -10,6 +10,18 @@ on:
         options:
           - generative-virtual-staging-2
           - generative-virtual-refurnishing
+      s3-bucket:
+        required: true
+        description: "S3 bucket uri that contains the checkpoints"
+        type: choice
+        options:
+          - s3://generative-virtual-refurnishing/after-refactor/
+          - s3://generative-virtual-staging2/
+      folder-name:
+        required: true
+        description: "full folder path (/home/ubuntu/...) in the instance that has a volume binding on it , "
+        type: string
+        default: /home/ubuntu/checkpoints
       target-region:
         required: true
         description: "Target group region"
@@ -71,10 +83,10 @@ jobs:
               ssh -o StrictHostKeyChecking=no -i ./private-key.pem ubuntu@$instance_ip "
                 cd /home/ubuntu/ && \
                 docker-compose down && \
-                rm -rf /home/ubuntu/checkpoints/ && \
+                sudo rm -rf /home/ubuntu/checkpoints/ && \
                 mkdir /home/ubuntu/checkpoints/ && \
                 mv /home/ubuntu/output/* /home/ubuntu/checkpoints/ && \
-                aws s3 sync s3://generative-virtual-staging2/ checkpoints/ && \
+                aws s3 sync ${{ github.event.inputs['s3-bucket'] }} ${{ github.event.inputs['folder-name'] }} && \
                 docker-compose up -d
               "
             else
