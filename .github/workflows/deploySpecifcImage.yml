@@ -14,6 +14,13 @@ on:
         options:
           - generative-virtual-staging-2
           - generative-virtual-refurnishing
+      target-region:
+        required: true
+        description: "Target group region"
+        type: choice
+        options:
+          - eu-central-1
+          - us-east-2
       target-group-arn:
         required: true
         description: "Select the Target Group you are willing to work On"
@@ -21,6 +28,10 @@ on:
         options:
           - arn:aws:elasticloadbalancing:eu-central-1:905418147598:targetgroup/generative-virtual-staging/cf60257b8cb37121
           - arn:aws:elasticloadbalancing:eu-central-1:905418147598:targetgroup/generative-virtual-refurnishing/704af4cdaf6dd0fd
+          - arn:aws:elasticloadbalancing:us-east-2:905418147598:targetgroup/generative-virtual-staging/4eaf4d0805b76992
+          - arn:aws:elasticloadbalancing:us-east-2:905418147598:targetgroup/generative-virtual-models/fab80f074da674f4
+          - arn:aws:elasticloadbalancing:eu-central-1:905418147598:targetgroup/staging-legacy/37238b3433f58ecd
+          - arn:aws:elasticloadbalancing:eu-central-1:905418147598:targetgroup/refurnishing-legacy/0c326d30a6cf522b
       ECR_REPOSITORY:
         required: true
         type: choice
@@ -28,19 +39,35 @@ on:
         options:
           - 905418147598.dkr.ecr.eu-central-1.amazonaws.com/generative-staging-v2
           - 905418147598.dkr.ecr.eu-central-1.amazonaws.com/generative-virtual-refurnishing
+      logs-groups:
+        required: true
+        description: "AWS CloudWatch logs Group"
+        type: string
+        default: generative-virtual-models
+      logs-stream:
+        required: true
+        description: "AWS CloudWatch logs stream"
+        type: choice
+        options:
+          - generative-virtual-staging-2
+          - generative-virtual-refurnishing
+          - refurnishing-legacy
+          - staging-legacy
+
 env:
   REPOS_OWNER: proptexx-com
+  ECR_REGION: eu-central-1
 
 jobs:
   deploy:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ${{ github.event.inputs.target-region }}
 
       - name: Set up SSH key
         run: |
@@ -49,63 +76,20 @@ jobs:
         env:
           PRIVATE_KEY_CONTENT: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Deploy to Refurnishing instances
-        if: ${{ github.event.inputs.repos-name == 'generative-virtual-refurnishing' }}
+      - name: Deploy to docker to instances
         run: |
           # Fetch instance IDs and store them in a list
-          instance_ids=$(aws elbv2 describe-target-health --target-group-arn ${{ github.event.inputs.target-group-arn }} --query 'TargetHealthDescriptions[].Target.Id' --output text --region ${{ secrets.AWS_REGION }})
+          instance_ids=$(aws elbv2 describe-target-health --target-group-arn ${{ github.event.inputs.target-group-arn }} --query 'TargetHealthDescriptions[].Target.Id' --output text --region ${{ github.event.inputs.target-region }})
 
           for instance_id in $instance_ids; do
             echo "Deploying to instance ID: $instance_id"
-            instance_ip=$(aws ec2 describe-instances --instance-ids $instance_id --query 'Reservations[].Instances[].PublicIpAddress' --output text --region ${{ secrets.AWS_REGION }})
+            instance_ip=$(aws ec2 describe-instances --instance-ids $instance_id --query 'Reservations[].Instances[].PublicIpAddress' --output text --region ${{ github.event.inputs.target-region }})
             echo "Instance IP: $instance_ip"
             ssh -o StrictHostKeyChecking=no -i ./private-key.pem ubuntu@$instance_ip "
               cd /home/ubuntu/ && \
               docker-compose down && \
               docker system prune --force --all --volumes && \
-              aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ github.event.inputs.ECR_REPOSITORY }} && \
-              docker pull ${{ github.event.inputs.ECR_REPOSITORY }}:${{ github.event.inputs.docker-tag }} && \
-              echo 'version: \"3.8\"' > /home/ubuntu/docker-compose.yml && \
-              echo '' >> /home/ubuntu/docker-compose.yml && \
-              echo 'services:' >> /home/ubuntu/docker-compose.yml && \
-              echo '  ${{ github.event.inputs.repos-name }}:' >> /home/ubuntu/docker-compose.yml && \
-              echo '    image: ${{ github.event.inputs.ECR_REPOSITORY }}:${{ github.event.inputs.docker-tag }}' >> /home/ubuntu/docker-compose.yml && \
-              echo '    ports:' >> /home/ubuntu/docker-compose.yml && \
-              echo '      - \"80:8080\"' >> /home/ubuntu/docker-compose.yml && \
-              echo '    restart: always' >> /home/ubuntu/docker-compose.yml && \
-              echo '    volumes:' >> /home/ubuntu/docker-compose.yml && \
-              echo '      - /home/ubuntu/refurnishing/trained_weights:/usr/src/app/trained_weights' >> /home/ubuntu/docker-compose.yml && \
-              echo '      - /home/ubuntu/refurnishing/huggingface:/root/.cache/huggingface' >> /home/ubuntu/docker-compose.yml && \
-              echo '    logging:' >> /home/ubuntu/docker-compose.yml && \
-              echo '      driver: awslogs' >> /home/ubuntu/docker-compose.yml && \
-              echo '      options:' >> /home/ubuntu/docker-compose.yml && \
-              echo '        awslogs-group: generative-virtual-models' >> /home/ubuntu/docker-compose.yml && \
-              echo '        awslogs-stream: ${{ github.event.inputs.repos-name }}' >> /home/ubuntu/docker-compose.yml && \
-              echo '    deploy:' >> /home/ubuntu/docker-compose.yml && \
-              echo '      resources:' >> /home/ubuntu/docker-compose.yml && \
-              echo '        reservations:' >> /home/ubuntu/docker-compose.yml && \
-              echo '          devices:' >> /home/ubuntu/docker-compose.yml && \
-              echo '            - driver: nvidia' >> /home/ubuntu/docker-compose.yml && \
-              echo '              count: all' >> /home/ubuntu/docker-compose.yml && \
-              echo '              capabilities: [gpu]' >> /home/ubuntu/docker-compose.yml && \
-              docker-compose up -d"
-          done
-
-      - name: Deploy to Staging instances
-        if: ${{ github.event.inputs.repos-name == 'generative-virtual-staging-2' }}
-        run: |
-          # Fetch instance IDs and store them in a list
-          instance_ids=$(aws elbv2 describe-target-health --target-group-arn ${{ github.event.inputs.target-group-arn }} --query 'TargetHealthDescriptions[].Target.Id' --output text --region ${{ secrets.AWS_REGION }})
-
-          for instance_id in $instance_ids; do
-            echo "Deploying to instance ID: $instance_id"
-            instance_ip=$(aws ec2 describe-instances --instance-ids $instance_id --query 'Reservations[].Instances[].PublicIpAddress' --output text --region ${{ secrets.AWS_REGION }})
-            echo "Instance IP: $instance_ip"
-            ssh -o StrictHostKeyChecking=no -i ./private-key.pem ubuntu@$instance_ip "
-              cd /home/ubuntu/ && \
-              docker-compose down && \
-              docker system prune --force --all --volumes && \
-              aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ github.event.inputs.ECR_REPOSITORY }} && \
+              aws ecr get-login-password --region ${{ env.ECR_REGION }} | docker login --username AWS --password-stdin ${{ github.event.inputs.ECR_REPOSITORY }} && \
               docker pull ${{ github.event.inputs.ECR_REPOSITORY }}:${{ github.event.inputs.docker-tag }} && \
               echo 'version: \"3.8\"' > /home/ubuntu/docker-compose.yml && \
               echo '' >> /home/ubuntu/docker-compose.yml && \
@@ -133,13 +117,13 @@ jobs:
               echo '    logging:' >> /home/ubuntu/docker-compose.yml && \
               echo '      driver: awslogs' >> /home/ubuntu/docker-compose.yml && \
               echo '      options:' >> /home/ubuntu/docker-compose.yml && \
-              echo '        awslogs-group: generative-virtual-models' >> /home/ubuntu/docker-compose.yml && \
-              echo '        awslogs-stream: ${{ github.event.inputs.repos-name }}' >> /home/ubuntu/docker-compose.yml && \
+              echo '        awslogs-group: ${{ github.event.inputs.logs-groups }}' >> /home/ubuntu/docker-compose.yml && \
+              echo '        awslogs-stream: ${{ github.event.inputs.logs-stream }}' >> /home/ubuntu/docker-compose.yml && \
               docker-compose up -d"
           done
 
   staging-api:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs: deploy
     if: ${{ github.event.inputs.repos-name == 'generative-virtual-staging-2' }}
     steps:
@@ -148,16 +132,16 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ${{ github.event.inputs.target-region }}
 
       - name: Check out the repository
         uses: actions/checkout@v3
 
       - name: Send API's first request
         run: |
-          bash ./wakeup-instances/sendRequests.sh ${{ secrets.AWS_REGION }} ${{ github.event.inputs.target-group-arn }}
+          bash ./wakeup-instances/sendRequests.sh ${{ github.event.inputs.target-region }} ${{ github.event.inputs.target-group-arn }}
   refurnishing-api:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs: deploy
     if: ${{ github.event.inputs.repos-name == 'generative-virtual-refurnishing' }}
     steps:
@@ -166,11 +150,11 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ${{ github.event.inputs.target-region }}
 
       - name: Check out the repository
         uses: actions/checkout@v3
 
       - name: Send API's first request
         run: |
-          bash ./wakeup-instances/sendRequestsRefurnishing.sh ${{ secrets.AWS_REGION }} ${{ github.event.inputs.target-group-arn }}
+          bash ./wakeup-instances/sendRequestsRefurnishing.sh ${{ github.event.inputs.target-region }} ${{ github.event.inputs.target-group-arn }}
