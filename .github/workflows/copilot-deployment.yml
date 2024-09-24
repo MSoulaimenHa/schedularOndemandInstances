@@ -59,6 +59,6 @@ jobs:
           cd ${{ github.event.inputs.repos-name }}
           echo "${{ secrets.GCP_PROJECT_FILE }}" > proptexx-dev-e252b7555fd6.json
           aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ github.event.inputs.ECR_REPOSITORY }}
-          docker build -t ${{ github.event.inputs.ECR_REPOSITORY }}:${{ github.event.inputs.docker-tag }} .
+          docker build -t ${{ github.event.inputs.ECR_REPOSITORY }}:${{ github.event.inputs.docker-tag }} -f Dockerfile.app .
           docker push ${{ github.event.inputs.ECR_REPOSITORY }}:${{ github.event.inputs.docker-tag }}
           docker system prune --all --volumes --force
