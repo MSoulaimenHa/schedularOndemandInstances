@@ -61,9 +61,8 @@ jobs:
       - name: Log in to Amazon ECR, build and push Docker container
         id: ecr-login
         run: |
-          mv proptexx-dev-e252b7555fd6.json ${{ github.event.inputs.repos-name }}/
+          mv proptexx-dev-e252b7555fd6.json ${{ github.event.inputs.repos-name }}/proptexx-dev-e252b7555fd6.json
           cd ${{ github.event.inputs.repos-name }}
-          echo "${{ secrets.GCP_PROJECT_FILE }}" > 
           aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ github.event.inputs.ECR_REPOSITORY }}
           docker build -t ${{ github.event.inputs.ECR_REPOSITORY }}:${{ github.event.inputs.docker-tag }} -f Dockerfile.app .
           docker push ${{ github.event.inputs.ECR_REPOSITORY }}:${{ github.event.inputs.docker-tag }}
