@@ -1,4 +1,4 @@
-name: Build docker container
+name: Generative-virtual-models Docker builder
 
 on:
   workflow_dispatch:
@@ -61,5 +61,6 @@ jobs:
           cd ${{ github.event.inputs.repos-name }}
           aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ github.event.inputs.ECR_REPOSITORY }}
           docker build -t ${{ github.event.inputs.ECR_REPOSITORY }}:${{ github.event.inputs.docker-tag }} .
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ github.event.inputs.ECR_REPOSITORY }}
           docker push ${{ github.event.inputs.ECR_REPOSITORY }}:${{ github.event.inputs.docker-tag }}
           docker system prune --all --volumes --force

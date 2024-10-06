@@ -1,4 +1,4 @@
-name: Deploy specific Docker Image
+name: Generative-virtual-models Deployment
 
 on:
   workflow_dispatch:
@@ -26,8 +26,6 @@ on:
         description: "Select the Target Group you are willing to work On"
         type: choice
         options:
-          - arn:aws:elasticloadbalancing:eu-central-1:905418147598:targetgroup/generative-virtual-staging/cf60257b8cb37121
-          - arn:aws:elasticloadbalancing:eu-central-1:905418147598:targetgroup/generative-virtual-refurnishing/704af4cdaf6dd0fd
           - arn:aws:elasticloadbalancing:us-east-2:905418147598:targetgroup/generative-virtual-staging/4eaf4d0805b76992
           - arn:aws:elasticloadbalancing:us-east-2:905418147598:targetgroup/generative-virtual-models/fab80f074da674f4
           - arn:aws:elasticloadbalancing:eu-central-1:905418147598:targetgroup/staging-legacy/37238b3433f58ecd
@@ -49,8 +47,6 @@ on:
         description: "AWS CloudWatch logs stream"
         type: choice
         options:
-          - generative-virtual-staging-2
-          - generative-virtual-refurnishing
           - refurnishing-legacy
           - staging-legacy
 
