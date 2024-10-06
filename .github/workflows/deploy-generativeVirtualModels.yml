@@ -37,6 +37,13 @@ on:
         options:
           - 905418147598.dkr.ecr.eu-central-1.amazonaws.com/generative-staging-v2
           - 905418147598.dkr.ecr.eu-central-1.amazonaws.com/generative-virtual-refurnishing
+      S3_URI:
+        required: true
+        type: choice
+        description: "Choose one of the following URI to update ."
+        options:
+          - s3://generative-virtual-staging2/
+          - s3://generative-virtual-refurnishing/after-refactor/
       logs-groups:
         required: true
         description: "AWS CloudWatch logs Group"
@@ -89,11 +96,13 @@ jobs:
             instance_ip=$(aws ec2 describe-instances --instance-ids $instance_id --query 'Reservations[].Instances[].PublicIpAddress' --output text --region ${{ github.event.inputs.target-region }})
             echo "Instance IP: $instance_ip"
             ssh -o StrictHostKeyChecking=no -i ./private-key.pem ubuntu@$instance_ip "
+
               cd /home/ubuntu/ && \
               docker-compose down && \
               docker system prune --force --all --volumes && \
               aws ecr get-login-password --region ${{ env.ECR_REGION }} | docker login --username AWS --password-stdin ${{ github.event.inputs.ECR_REPOSITORY }} && \
               docker pull ${{ github.event.inputs.ECR_REPOSITORY }}:${{ github.event.inputs.docker-tag }} && \
+              sudo aws s3 sync ${{github.event.inputs.S3_URI}} /home/ubuntu/checkpoints --exact-timestamps --region ${{ env.ECR_REGION }}  && \
               echo 'version: \"3.8\"' > /home/ubuntu/docker-compose.yml && \
               echo '' >> /home/ubuntu/docker-compose.yml && \
               echo 'services:' >> /home/ubuntu/docker-compose.yml && \
